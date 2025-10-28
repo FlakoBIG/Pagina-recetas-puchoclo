@@ -43,7 +43,7 @@ const confirmDeleteBtn = $("confirmDeleteBtn");
 
 const e_titulo = $("e_titulo");
 const e_tiempo = $("e_tiempo");
-const e_raciones = $("e_raciones");
+const e_porciones = $("e_porciones");
 const e_imagenUrl = $("e_imagenUrl");
 const e_ingredientes = $("e_ingredientes");
 const e_pasos = $("e_pasos");
@@ -99,12 +99,17 @@ async function loadRecipe() {
     currentData = snap.data();
     msg.textContent = "";
 
+    const porc = (currentData.porciones ?? currentData.raciones ?? 0);
+
     // Pintar detalle
     card.innerHTML = `
       <img src="${currentData.imagen || ""}" alt="${currentData.nombre || ""}" />
       <div class="detalle-body">
         <h2>${currentData.nombre || "Sin título"}</h2>
-        <p class="meta">⏱️ ${currentData.tiempo || "—"} • 👥 ${currentData.raciones ?? "—"} raciones</p>
+        <p class="meta">
+          <span class="badge">⏱️ ${currentData.tiempo || "—"}</span>
+          ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
+        </p>
 
         <h3>🧺 Ingredientes</h3>
         <ul class="listita">
@@ -121,7 +126,7 @@ async function loadRecipe() {
     // Prellenar modal edición con formato visible:
     e_titulo.value     = currentData.nombre || "";
     e_tiempo.value     = /^\d{2}:\d{2}$/.test(currentData.tiempo || "") ? currentData.tiempo : "00:30";
-    e_raciones.value   = currentData.raciones || 1;
+    e_porciones.value  = porc; // 0 si no existe
     e_imagenUrl.value  = currentData.imagen || "";
     e_ingredientes.value = toBulletedLines(currentData.ingredientes); // • item
     e_pasos.value        = toNumberedLines(currentData.pasos);        // 1) item
@@ -169,10 +174,12 @@ editForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   msg.textContent = "Guardando cambios…";
 
+  const porcVal = Math.max(0, parseInt(e_porciones.value, 10) || 0);
+
   const updated = {
     nombre: e_titulo.value.trim(),
     tiempo: normalizeTime(e_tiempo.value.trim()),
-    raciones: Math.max(1, parseInt(e_raciones.value, 10) || 1),
+    porciones: porcVal, // ← guarda porciones (0 permitido)
     imagen: e_imagenUrl.value.trim(),
     // Se limpia la numeración/viñetas para guardar como arrays “puros”
     ingredientes: linesToArr(e_ingredientes.value),

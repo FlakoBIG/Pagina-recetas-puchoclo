@@ -47,13 +47,16 @@ async function renderList() {
     const r = doc.data();
     const art = document.createElement("article");
     art.className = "recipe-card";
+
+    const porc = (r.porciones ?? r.raciones ?? 0);
+
     art.innerHTML = `
       <img src="${r.imagen || ""}" class="recipe-img" alt="${r.nombre || ""}">
       <div class="recipe-info">
         <h3>${r.nombre || "Sin título"}</h3>
         <div class="meta">
           <span class="badge">⏱️ ${r.tiempo || "—"}</span>
-          <span class="badge">👥 ${r.raciones ?? "—"} raciones</span>
+          ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
         </div>
       </div>
     `;
@@ -104,13 +107,14 @@ function attachCreate() {
     const saveBtn   = qs("saveRecipeBtn");
     const titulo    = qs("titulo")?.value.trim();
     const tiempo    = qs("tiempo")?.value.trim();
-    const raciones  = parseInt(qs("raciones")?.value, 10);
+    const porcionesV = parseInt(qs("porciones")?.value, 10); // ← porciones opcional
     const imagenUrl = qs("imagenUrl")?.value.trim();
     const ingText   = qs("ingredientes")?.value.trim();
     const pasosText = qs("pasos")?.value.trim();
 
-    if (!titulo || !tiempo || !raciones || !imagenUrl) {
-      if (msg) msg.textContent = "Completa título, tiempo, raciones e imagen.";
+    // porciones es opcional, no se valida
+    if (!titulo || !tiempo || !imagenUrl) {
+      if (msg) msg.textContent = "Completa título, tiempo e imagen (porciones es opcional).";
       return;
     }
 
@@ -119,7 +123,7 @@ function attachCreate() {
       const docData = {
         nombre: titulo,
         tiempo,
-        raciones,
+        porciones: isNaN(porcionesV) || porcionesV < 0 ? 0 : porcionesV, // ← default 0
         imagen: imagenUrl,
         ingredientes: normalizeLines(ingText),
         pasos: normalizeLines(pasosText),
@@ -128,6 +132,10 @@ function attachCreate() {
       await addDoc(collection(db, "recetas"), docData);
 
       form.reset();
+      // vuelve a 0 explícitamente (algunos navegadores no respetan reset)
+      const porcInput = qs("porciones");
+      if (porcInput) porcInput.value = "0";
+
       qs("recipeDialog")?.close();
       await renderList();
     } catch (err) {
@@ -149,33 +157,39 @@ function init() {
   });
 }
 /* ---------- Numeración automática ---------- */
-function autoNumerarTextareas() {
+// Ingredientes con viñetas "• " y Pasos numerados "1)"
+function autoFormatTextareas() {
   const ing = document.getElementById("ingredientes");
   const pasos = document.getElementById("pasos");
 
-  function addNumbering(el) {
-    el.addEventListener("keydown", (e) => {
+  // Ing: bullets
+  if (ing) {
+    if (!ing.value.trim()) ing.value = "• ";
+    ing.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        const lines = el.value.split("\n");
-        const next = lines.length + 1;
-        el.value += `\n${next}) `;
-        // mueve el cursor al final
-        setTimeout(() => {
-          el.selectionStart = el.selectionEnd = el.value.length;
-        }, 0);
+        ing.value += "\n• ";
+        setTimeout(() => { ing.selectionStart = ing.selectionEnd = ing.value.length; }, 0);
       }
     });
-    // si empieza vacío, agrega el 1)
-    if (!el.value.trim()) el.value = "1) ";
   }
 
-  addNumbering(ing);
-  addNumbering(pasos);
+  // Pasos: numeración
+  if (pasos) {
+    if (!pasos.value.trim()) pasos.value = "1) ";
+    pasos.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const count = pasos.value.split(/\r?\n/).filter(l => l.trim().length).length;
+        pasos.value += `\n${count + 1}) `;
+        setTimeout(() => { pasos.selectionStart = pasos.selectionEnd = pasos.value.length; }, 0);
+      }
+    });
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  autoNumerarTextareas();
+  autoFormatTextareas();
 });
 
 window.addEventListener("DOMContentLoaded", init);
