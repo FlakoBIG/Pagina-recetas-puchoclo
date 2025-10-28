@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍿 Receta | Puchoclo</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="btn-back">← Volver</a>
+
+    <h1 class="brand">🍿 Recetas Puchoclo 🍿</h1>
+  </div>
+</header>
+
+
+  <main class="detalle-wrap">
+    <p id="detalleMsg" class="form-msg"></p>
+
+    <article id="detalleCard" class="detalle-card"><!-- se completa por JS --></article>
+
+    <section class="detalle-actions">
+      <button id="editBtn" class="btn-primary">Editar</button>
+      <button id="deleteBtn" class="btn-danger">Borrar</button>
+    </section>
+  </main>
+
+  <!-- ✏️ Modal editar -->
+  <dialog id="editDialog">
+    <form id="editForm" method="dialog">
+      <h2>Editar receta</h2>
+
+      <label>Título</label>
+      <input type="text" id="e_titulo" required/>
+
+      <label>Tiempo</label>
+      <input type="time" id="e_tiempo" value="00:30" step="300" required/>
+
+      <label>Raciones</label>
+      <input type="number" id="e_raciones" min="1" value="1" required/>
+
+      <label>Enlace de imagen</label>
+      <input type="url" id="e_imagenUrl" placeholder="https://..." required/>
+
+      <label>Ingredientes</label>
+      <textarea id="e_ingredientes" rows="6" placeholder="1) Harina 200 g"></textarea>
+
+      <label>Preparación</label>
+      <textarea id="e_pasos" rows="8" placeholder="1) Precalentar el horno a 180°C"></textarea>
+
+      <div class="dialog-actions">
+        <button type="button" id="cancelEditBtn" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 🗑️ Modal confirmar borrado -->
+  <dialog id="confirmDialog">
+    <h3>¿Borrar esta receta?</h3>
+    <p>Esta acción no se puede deshacer.</p>
+    <div class="dialog-actions">
+      <button type="button" id="cancelDeleteBtn" class="btn-secondary">Cancelar</button>
+      <button type="button" id="confirmDeleteBtn" class="btn-danger">Borrar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="assets/js/detalle.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍿 Recetas Puchoclo 🍿</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <h1 class="brand">🍿 Recetas Puchoclo 🍿</h1>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar receta...">
+    </div>
+  </div>
+</header>
+
+
+  <main>
+    <div id="recipesContainer" class="recipes-grid"></div>
+  </main>
+
+  <button id="addRecipeBtn" class="floating-btn" title="Añadir receta">＋</button>
+
+  <!-- Modal crear receta -->
+  <dialog id="recipeDialog">
+    <form id="recipeForm" method="dialog">
+      <h2>Nueva receta</h2>
+
+      <label>📛 Título</label>
+      <input type="text" id="titulo" required placeholder="Budín de limón" />
+
+      <label>⏱️ Tiempo de preparación</label>
+      <input type="time" id="tiempo" value="00:30" step="300" required />
+
+      <label>👥 Raciones</label>
+      <input type="number" id="raciones" min="1" value="1" required />
+
+      <label>🖼️ Enlace de imagen</label>
+      <input type="url" id="imagenUrl" placeholder="https://..." required />
+
+      <label>🧺 Ingredientes</label>
+      <textarea id="ingredientes" rows="5" placeholder="1) Harina 200 g"></textarea>
+
+      <label>👩‍🍳 Preparación</label>
+      <textarea id="pasos" rows="6" placeholder="1) Precalentar el horno a 180°C"></textarea>
+
+      <div class="dialog-actions">
+        <button type="button" id="cancelDialogBtn" class="btn-secondary">Cancelar</button>
+        <button type="submit" id="saveRecipeBtn" class="btn-primary">Guardar</button>
+      </div>
+      <p id="formMsg" class="form-msg"></p>
+    </form>
+  </dialog>
+  <script type="module" src="assets/js/app.js"></script>
+
+</body>
+</html>

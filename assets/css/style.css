@@ -1,0 +1,132 @@
+/* =========================================
+   VARIABLES & BASE
+========================================= */
+:root{
+  --bg:#0f0f0f; --bg-2:#171717; --card:#1d1d1d; --muted:#a7a7a7; --text:#f5f5f5;
+  --brand:#ffda77; --brand-2:#ffe28f; --danger:#e74c3c; --ok:#14b8a6;
+  --radius:14px; --radius-sm:10px; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+
+.container{width:100%;max-width:1100px;margin-inline:auto;padding-inline:14px}
+
+/* =========================================
+   HEADER (espacios y layout)
+========================================= */
+.site-header{position:sticky;top:0;z-index:20;background:var(--bg-2);border-bottom:1px solid #222;}
+.header-inner{display:grid;gap:12px;align-items:center;padding-block:16px;}
+.brand{margin:0;color:var(--brand);text-align:center;letter-spacing:.3px}
+
+.search-wrap{display:flex;justify-content:center}
+.search-input{
+  width:100%;max-width:520px;padding:12px 14px;border-radius:12px;border:1px solid #2a2a2a;background:#101010;color:var(--text);
+  outline:none;transition:border .15s ease;
+}
+.search-input:focus{border-color:#3a3a3a}
+
+/* Desktop: separa título e input en línea */
+@media (min-width:768px){
+  .header-inner{grid-template-columns:1fr auto 1fr}
+  .brand{grid-column:2;text-align:center}
+  .search-wrap{grid-column:2}
+}
+
+/* =========================================
+   GRID DE RECETAS
+========================================= */
+main{padding:18px 0}
+.recipes-grid{display:grid;gap:16px;padding:0 14px}
+@media (min-width:480px){.recipes-grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:768px){.recipes-grid{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1100px){.recipes-grid{grid-template-columns:repeat(4,1fr)}}
+
+.recipe-card{
+  background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
+}
+.recipe-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.recipe-img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#000}
+.recipe-info{padding:12px}
+.recipe-info h3{margin:0 0 6px;color:var(--brand-2)}
+.meta{display:flex;gap:10px;align-items:center;font-size:.92rem;color:var(--muted)}
+.badge{padding:4px 8px;border-radius:999px;background:#222;border:1px solid #2a2a2a}
+
+/* =========================================
+   BOTÓN FLOTANTE
+========================================= */
+.floating-btn{
+  position:fixed;right:18px;bottom:18px;z-index:30;background:var(--brand);color:#000;border:none;border-radius:50%;
+  width:56px;height:56px;font-size:24px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s ease, filter .15s;
+}
+.floating-btn:hover{filter:brightness(1.03);transform:translateY(-2px)}
+
+/* =========================================
+   DIALOGS / FORMS (crear/editar/confirmar)
+========================================= */
+dialog{
+  width:min(620px,92vw);border:none;border-radius:var(--radius);background:var(--bg-2);color:var(--text);padding:18px 18px 14px;box-shadow:var(--shadow);
+}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+
+form{display:grid;gap:10px}
+form h2{margin:0 0 6px;color:var(--brand)}
+label{font-size:.92rem;color:#d8d8d8;display:flex;gap:8px;align-items:center}
+
+input[type="text"],input[type="url"],input[type="number"],input[type="time"],textarea{
+  width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a2a2a;background:#101010;color:var(--text);outline:none;
+}
+input[type="number"]{max-width:120px}
+textarea{min-height:120px;resize:vertical}
+
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.btn-primary,.btn-secondary,.btn-danger{
+  padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:600;
+}
+.btn-primary{background:var(--brand);color:#000}
+.btn-secondary{background:#2a2a2a;color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+
+/* Compactar inputs en pantallas chicas */
+@media (max-width:420px){
+  input,textarea{font-size:.95rem;padding:9px 10px}
+  dialog{padding:14px}
+}
+
+/* =========================================
+   DETALLE
+========================================= */
+.detalle-wrap{max-width:900px;margin-inline:auto;padding:18px 14px}
+.detalle-card{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.detalle-card img{width:100%;max-height:360px;object-fit:cover}
+.detalle-body{padding:14px}
+.detalle-body h2{margin:6px 0 8px;color:var(--brand-2)}
+.listita{margin:8px 0;padding-left:20px}
+.listita li{margin:4px 0}
+.detalle-actions{display:flex;gap:10px;align-items:center;margin:14px 0}
+
+/* =========================================
+   EMPTY STATE
+========================================= */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;gap:8px;margin:28px 0;color:var(--muted);padding:30px;border:1px dashed #2a2a2a;border-radius:16px;background:linear-gradient(180deg,rgba(255,218,119,.08),transparent);
+}
+.empty-state .emoji{font-size:42px}
+.empty-state .title{font-weight:700;color:#ffd972}
+.empty-state .hint{font-size:.95rem}
+
+/*VOLVER*/
+.btn-back{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--brand);color:#000;font-weight:600;
+  padding:8px 14px;border-radius:999px;text-decoration:none;
+  box-shadow:0 3px 10px rgba(255,218,119,.3);
+  transition:.2s;
+}
+.btn-back:hover{
+  background:var(--brand-2);
+  transform:translateY(-2px);
+  box-shadow:0 5px 14px rgba(255,218,119,.45);
+}
