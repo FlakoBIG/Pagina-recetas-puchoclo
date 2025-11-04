@@ -50,7 +50,7 @@ const e_porciones = $("e_porciones");
 const e_imagenUrl = $("e_imagenUrl");
 const e_ingredientes = $("e_ingredientes");
 const e_pasos = $("e_pasos");
-const e_collectionSelect = $("e_collectionSelect"); // 👈 NUEVO
+const e_categorySelect = $("e_categorySelect"); // selector de Categoría
 
 /* ---------- Estado ---------- */
 const id = getParam("id");
@@ -82,45 +82,48 @@ function enableAutoNumbering(el) {
   });
 }
 
-/* ---------- Cargar colecciones en el SELECT (editar) ---------- */
-async function loadCollectionsForEditSelect(selectedId = "") {
-  if (!e_collectionSelect) return;
-  e_collectionSelect.innerHTML = `<option value="">(Sin colección)</option>`;
+/* ---------- Cargar categorías en el SELECT (editar) ---------- */
+async function loadCategoriesForEditSelect(selectedName = "") {
+  if (!e_categorySelect) return;
+  e_categorySelect.innerHTML = `<option value="">(Sin categoría)</option>`;
   try {
-    const snap = await getDocs(query(collection(db, "colecciones"), orderBy("name", "asc")));
+    const snap = await getDocs(query(collection(db, "categorias"), orderBy("name", "asc")));
     snap.forEach(d => {
       const data = d.data();
+      const name = (data?.name || "").trim();
+      if (!name) return;
       const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = data?.name || "(sin nombre)";
-      if (d.id === selectedId) opt.selected = true;
-      e_collectionSelect.appendChild(opt);
+      opt.value = name;        // guardamos por NOMBRE en 'categoria'
+      opt.textContent = name;
+      if (name === selectedName) opt.selected = true;
+      e_categorySelect.appendChild(opt);
     });
   } catch (e) {
-    console.error("Error cargando colecciones (editar):", e);
+    console.error("Error cargando categorías (editar):", e);
   }
 }
 
 /* ---------- Cargar receta ---------- */
 async function loadRecipe() {
   if (!id) {
-    msg.textContent = "❌ Falta el id en la URL.";
+    if (msg) msg.textContent = "❌ Falta el id en la URL.";
     return;
   }
   try {
-    msg.textContent = "⏳ Cargando…";
+    if (msg) msg.textContent = "⏳ Cargando…";
     const ref = doc(db, "recetas", id);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
-      msg.textContent = "❌ La receta no existe o fue eliminada.";
+      if (msg) msg.textContent = "❌ La receta no existe o fue eliminada.";
       return;
     }
     currentData = snap.data();
-    msg.textContent = "";
+    if (msg) msg.textContent = "";
 
     const porc = (currentData.porciones ?? currentData.raciones ?? 0);
+    const categoryName = (currentData.categoria || currentData.collectionName || "").trim();
 
-    // Pintar detalle (incluye badge de colección si existe)
+    // Pintar detalle (incluye badge de categoría si existe)
     card.innerHTML = `
       <img src="${currentData.imagen || ""}" alt="${currentData.nombre || ""}" />
       <div class="detalle-body">
@@ -128,7 +131,7 @@ async function loadRecipe() {
         <p class="meta">
           <span class="badge">⏱️ ${currentData.tiempo || "—"}</span>
           ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
-          ${currentData.collectionName ? `<span class="badge">📚 ${currentData.collectionName}</span>` : ""}
+          ${categoryName ? `<span class="badge">📚 ${categoryName}</span>` : ""}
         </p>
 
         <h3>🧺 Ingredientes</h3>
@@ -141,7 +144,7 @@ async function loadRecipe() {
           ${(currentData.pasos || []).map(x => `<li>${x}</li>`).join("") || "<li>—</li>"}
         </ol>
       </div>
-    `;
+    `; // 👈 backtick correcto aquí
 
     // Prellenar modal edición con formato visible:
     e_titulo.value       = currentData.nombre || "";
@@ -151,11 +154,11 @@ async function loadRecipe() {
     e_ingredientes.value = toBulletedLines(currentData.ingredientes);
     e_pasos.value        = toNumberedLines(currentData.pasos);
 
-    // Cargar colecciones y preseleccionar la actual
-    await loadCollectionsForEditSelect(currentData.collectionId || "");
+    // Cargar categorías y preseleccionar la actual (por NOMBRE)
+    await loadCategoriesForEditSelect(categoryName);
   } catch (err) {
     console.error(err);
-    msg.textContent = "⚠️ Error al cargar la receta.";
+    if (msg) msg.textContent = "⚠️ Error al cargar la receta.";
   }
 }
 
@@ -172,19 +175,19 @@ function setupDialogs() {
   ensureDialogPolyfill(editDialog);
   ensureDialogPolyfill(confirmDialog);
 
-  editBtn.addEventListener("click", async () => {
-    // cada vez que abras, recarga colecciones (por si se agregaron nuevas)
-    await loadCollectionsForEditSelect(currentData?.collectionId || "");
+  editBtn?.addEventListener("click", async () => {
+    const categoryName = (currentData?.categoria || currentData?.collectionName || "").trim();
+    await loadCategoriesForEditSelect(categoryName); // refresca cada vez
     enableAutoBullets(e_ingredientes);
     enableAutoNumbering(e_pasos);
     if (!e_ingredientes.value.trim()) e_ingredientes.value = "• ";
     if (!e_pasos.value.trim()) e_pasos.value = "1) ";
     editDialog.showModal();
   });
-  cancelEditBtn.addEventListener("click", () => editDialog.close());
+  cancelEditBtn?.addEventListener("click", () => editDialog.close());
 
-  deleteBtn.addEventListener("click", () => confirmDialog.showModal());
-  cancelDeleteBtn.addEventListener("click", () => confirmDialog.close());
+  deleteBtn?.addEventListener("click", () => confirmDialog.showModal());
+  cancelDeleteBtn?.addEventListener("click", () => confirmDialog.close());
 }
 
 /* ---------- Guardar edición ---------- */
@@ -192,17 +195,14 @@ function normalizeTime(value) {
   return /^\d{2}:\d{2}$/.test(value) ? value : "00:30";
 }
 
-editForm.addEventListener("submit", async (e) => {
+editForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  msg.textContent = "Guardando cambios…";
+  if (msg) msg.textContent = "Guardando cambios…";
 
   const porcVal = Math.max(0, parseInt(e_porciones.value, 10) || 0);
 
-  // colección elegida
-  const colId = e_collectionSelect?.value || "";
-  const colName = (e_collectionSelect && e_collectionSelect.selectedOptions && e_collectionSelect.selectedOptions[0])
-    ? e_collectionSelect.selectedOptions[0].textContent
-    : "";
+  // categoría elegida (NOMBRE)
+  const categoriaName = (e_categorySelect?.value || "").trim();
 
   const updated = {
     nombre: e_titulo.value.trim(),
@@ -211,31 +211,33 @@ editForm.addEventListener("submit", async (e) => {
     imagen: e_imagenUrl.value.trim(),
     ingredientes: linesToArr(e_ingredientes.value),
     pasos: linesToArr(e_pasos.value),
-    // 👇 NUEVO: actualizar colección
-    collectionId: colId || null,
-    collectionName: colId ? colName : null,
+    // Nuevo esquema (por nombre):
+    categoria: categoriaName || null,
+    // Limpieza de campos antiguos (compat):
+    collectionId: null,
+    collectionName: null
   };
 
   try {
     await updateDoc(doc(db, "recetas", id), updated);
-    msg.textContent = "Cambios guardados ✔";
+    if (msg) msg.textContent = "Cambios guardados ✔";
     editDialog.close();
-    await loadRecipe(); // refresca la tarjeta con la nueva badge de colección
+    await loadRecipe(); // refresca la tarjeta con la nueva badge de categoría
   } catch (err) {
     console.error(err);
-    msg.textContent = "⚠️ Error al actualizar.";
+    if (msg) msg.textContent = "⚠️ Error al actualizar.";
   }
 });
 
 /* ---------- Confirmar borrado ---------- */
-confirmDeleteBtn.addEventListener("click", async () => {
+confirmDeleteBtn?.addEventListener("click", async () => {
   try {
     await deleteDoc(doc(db, "recetas", id));
     confirmDialog.close();
     window.location.href = "index.html";
   } catch (err) {
     console.error(err);
-    msg.textContent = "⚠️ Error al borrar.";
+    if (msg) msg.textContent = "⚠️ Error al borrar.";
     confirmDialog.close();
   }
 });

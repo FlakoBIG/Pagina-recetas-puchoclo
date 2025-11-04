@@ -6,10 +6,10 @@ import {
 function qs(id) { return document.getElementById(id); }
 
 /* ===============================
-   Estado de filtros (texto + colección)
+   Estado de filtros (texto + categoría)
 ================================== */
 let currentSearch = "";
-let currentCollectionFilter = ""; // "" = Todas
+let currentCategoryFilter = ""; // "" = Todas
 
 /* ===============================
    Firestore helpers
@@ -37,15 +37,15 @@ function normalizeLines(txt) {
    Búsqueda + Filtro (en cliente)
 ================================== */
 function applyFilters(recipesContainer) {
-  const term = currentSearch.toLowerCase();
-  const wantedCol = currentCollectionFilter; // "" = todas
+  const term = (currentSearch || "").toLowerCase();
+  const wantedCat = currentCategoryFilter; // "" = todas
 
   recipesContainer.querySelectorAll(".recipe-card").forEach(card => {
     const name = card.querySelector("h3")?.textContent.toLowerCase() || "";
-    const cardColId = card.dataset.collectionId || "";
+    const cardCatName = card.dataset.categoryName || ""; // nombre de categoría
     const matchText = name.includes(term);
-    const matchCol  = !wantedCol || cardColId === wantedCol;
-    card.style.display = (matchText && matchCol) ? "" : "none";
+    const matchCat  = !wantedCat || cardCatName === wantedCat;
+    card.style.display = (matchText && matchCat) ? "" : "none";
   });
 }
 
@@ -57,16 +57,18 @@ function attachSearch(recipesContainer, searchInput) {
   });
 }
 
-function attachCollectionFilter(recipesContainer, selectEl) {
+function attachCategoryFilter(recipesContainer, selectEl) {
   if (!selectEl || !recipesContainer) return;
   selectEl.addEventListener("change", () => {
-    currentCollectionFilter = selectEl.value || "";
+    currentCategoryFilter = selectEl.value || "";
     applyFilters(recipesContainer);
   });
 }
 
 /* ===============================
    Render de tarjetas
+   - Backwards compat:
+     usa r.categoria || r.collectionName para mostrar y filtrar
 ================================== */
 async function renderList() {
   const recipesContainer = qs("recipesContainer");
@@ -78,9 +80,13 @@ async function renderList() {
 
   snap.forEach(docRef => {
     const r = docRef.data();
+
+    // Compatibilidad: nombre de categoría que mostraremos/filtraremos
+    const categoryName = (r.categoria || r.collectionName || "").trim();
+
     const art = document.createElement("article");
     art.className = "recipe-card";
-    art.dataset.collectionId = r.collectionId || ""; // 👈 para filtrar
+    art.dataset.categoryName = categoryName; // 👈 para el filtro por nombre
 
     const porc = (r.porciones ?? r.raciones ?? 0);
 
@@ -91,7 +97,7 @@ async function renderList() {
         <div class="meta">
           <span class="badge">⏱️ ${r.tiempo || "—"}</span>
           ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
-          ${r.collectionName ? `<span class="badge">📚 ${r.collectionName}</span>` : ""}
+          ${categoryName ? `<span class="badge">📚 ${categoryName}</span>` : ""}
         </div>
       </div>
     `;
@@ -111,49 +117,53 @@ async function renderList() {
     `;
   }
 
-  // aplica filtros actuales (por si había texto o colección seleccionada)
+  // aplica filtros actuales (por si había texto o categoría seleccionada)
   applyFilters(recipesContainer);
 }
 
 /* ===============================
-   Select de colecciones (modal crear)
+   Select de categorías (modal crear)
 ================================== */
-async function loadCollectionsForCreateSelect() {
-  const sel = qs("collectionSelect");
+async function loadCategoriesForCreateSelect() {
+  const sel = qs("categorySelect");
   if (!sel) return;
-  sel.innerHTML = `<option value="">(Sin colección)</option>`;
+  sel.innerHTML = `<option value="">(Sin categoría)</option>`;
   try {
-    const snap = await getDocs(query(collection(db, "colecciones"), orderBy("name", "asc")));
+    const snap = await getDocs(query(collection(db, "categorias"), orderBy("name", "asc")));
     snap.forEach(d => {
       const data = d.data();
       const opt = document.createElement("option");
-      opt.value = d.id;
+      // Usamos el NOMBRE como value para guardar directamente en 'categoria'
+      opt.value = (data?.name || "").trim();
       opt.textContent = data?.name || "(sin nombre)";
       sel.appendChild(opt);
     });
   } catch (e) {
-    console.error("Error cargando colecciones (crear):", e);
+    console.error("Error cargando categorías (crear):", e);
   }
 }
 
 /* ===============================
-   Select de colecciones (filtro)
+   Select de categorías (filtro)
+   - filtra por NOMBRE
 ================================== */
-async function loadCollectionsForFilter() {
-  const sel = qs("filterCollection");
+async function loadCategoriesForFilter() {
+  const sel = qs("filterCategory");
   if (!sel) return;
   sel.innerHTML = `<option value="">(Todas)</option>`;
   try {
-    const snap = await getDocs(query(collection(db, "colecciones"), orderBy("name", "asc")));
+    const snap = await getDocs(query(collection(db, "categorias"), orderBy("name", "asc")));
     snap.forEach(d => {
       const data = d.data();
+      const name = (data?.name || "").trim();
+      if (!name) return;
       const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = data?.name || "(sin nombre)";
+      opt.value = name;       // filtraremos contra dataset.categoryName
+      opt.textContent = name;
       sel.appendChild(opt);
     });
   } catch (e) {
-    console.error("Error cargando colecciones (filtro):", e);
+    console.error("Error cargando categorías (filtro):", e);
   }
 }
 
@@ -173,7 +183,7 @@ function attachModal() {
   }
 
   addBtn.addEventListener("click", async () => {
-    await loadCollectionsForCreateSelect();
+    await loadCategoriesForCreateSelect();
     dialog.showModal();
   });
   cancel.addEventListener("click", () => dialog.close());
@@ -181,6 +191,8 @@ function attachModal() {
 
 /* ===============================
    Crear receta
+   - guarda 'categoria' (string)
+   - deja de usar collectionId/collectionName
 ================================== */
 function attachCreate() {
   const form = qs("recipeForm");
@@ -199,11 +211,8 @@ function attachCreate() {
     const ingText   = qs("ingredientes")?.value.trim();
     const pasosText = qs("pasos")?.value.trim();
 
-    const sel = qs("collectionSelect");
-    const collectionId = sel?.value || "";
-    const collectionName = sel && sel.selectedOptions && sel.selectedOptions[0]
-      ? sel.selectedOptions[0].textContent
-      : "";
+    const sel = qs("categorySelect");
+    const categoria = (sel?.value || "").trim(); // nombre de la categoría seleccionada, o vacío
 
     if (!titulo || !tiempo || !imagenUrl) {
       if (msg) msg.textContent = "Completa título, tiempo e imagen (porciones es opcional).";
@@ -220,15 +229,16 @@ function attachCreate() {
         ingredientes: normalizeLines(ingText),
         pasos: normalizeLines(pasosText),
         createdAt: serverTimestamp(),
-        collectionId: collectionId || null,
-        collectionName: collectionId ? collectionName : null
+        // Nuevo esquema:
+        categoria: categoria || null
+        // Compat: NO guardamos más collectionId/collectionName en nuevas recetas
       };
       await addDoc(collection(db, "recetas"), docData);
 
       form.reset();
       const porcInput = qs("porciones");
       if (porcInput) porcInput.value = "0";
-      const selEl = qs("collectionSelect");
+      const selEl = qs("categorySelect");
       if (selEl) selEl.selectedIndex = 0;
 
       qs("recipeDialog")?.close();
@@ -251,12 +261,12 @@ async function init() {
 
   const recipesContainer = qs("recipesContainer");
   const searchInput = qs("searchInput");
-  const filterSelect = qs("filterCollection");
+  const filterSelect = qs("filterCategory");
 
   attachSearch(recipesContainer, searchInput);
-  attachCollectionFilter(recipesContainer, filterSelect);
+  attachCategoryFilter(recipesContainer, filterSelect);
 
-  await loadCollectionsForFilter();
+  await loadCategoriesForFilter();
   await renderList();
 }
 

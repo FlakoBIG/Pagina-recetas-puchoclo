@@ -11,27 +11,25 @@
 <header class="site-header">
   <div class="container header-inner">
     <!-- 📚 icono a la izquierda, como botón -->
-    <a id="collectionsLink" href="collections.html" class="btn-secondary" title="Colecciones" aria-label="Colecciones">📚</a>
-
+    <a id="categoriesLink" href="categorias.html" class="btn-secondary" title="Categorías" aria-label="Categorías">📚</a>
     <h1 class="brand">🍿 Recetas Puchoclo 🍿</h1>
   </div>
 </header>
 
-<!-- Barra bajo el título: búsqueda y filtro por colección -->
+<!-- Barra bajo el título: búsqueda y filtro por categoría -->
 <section class="container" style="margin-top:.5rem;">
   <!-- Buscar -->
   <div class="search-wrap" style="margin-bottom:.5rem;">
     <input type="text" id="searchInput" class="search-input" placeholder="Buscar receta...">
   </div>
 
-  <!-- Filtro por colección -->
-<div class="filters-bar">
-  <span aria-hidden="true">📚</span>
-  <label for="filterCollection" class="visually-hidden">Filtrar por colección</label>
-  <select id="filterCollection" class="form-select">
-    <option value="">(Todas)</option>
-  </select>
-</div>
+  <!-- Filtro por categoría -->
+  <div class="filters-bar">
+    <span aria-hidden="true">📚</span>
+    <label for="filterCategory" class="visually-hidden">Filtrar por categoría</label>
+    <select id="filterCategory" class="form-select">
+      <option value="">(Todas)</option>
+    </select>
   </div>
 </section>
 
@@ -49,10 +47,10 @@
     <label>📛 Título</label>
     <input type="text" id="titulo" required placeholder="Budín de limón" />
 
-    <!-- Selección de colección -->
-    <label>📚 Colección</label>
-    <select id="collectionSelect">
-      <option value="">(Sin colección)</option>
+    <!-- Selección de categoría -->
+    <label>📚 Categoría</label>
+    <select id="categorySelect">
+      <option value="">(Sin categoría)</option>
     </select>
 
     <label>⏱️ Tiempo de preparación</label>

@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📚 Colecciones – Recetas Puchoclo</title>
+  <title>📚 Categorías – Recetas Puchoclo</title>
   <link rel="stylesheet" href="assets/css/style.css" />
   <style>
     /* Lista tipo “fila”: nombre a la izquierda, botones a la derecha */
-    .collections-list { display: grid; gap: 10px; }
-    .col-row {
+    .categories-list { display: grid; gap: 10px; }
+    .cat-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 14px; border-radius: 12px;
       background: #1d1d1d;
     }
-    .col-title { font-weight: 600; margin: 0; }
-    .col-actions { display: flex; gap: 8px; }
-    /* opcional: que ocupe ancho completo como tus cards de recetas */
-    .collections-wrap { max-width: 920px; margin: 0 auto; }
+    .cat-title { font-weight: 600; margin: 0; }
+    .cat-actions { display: flex; gap: 8px; }
+    /* opcional: ancho similar a tus cards de recetas */
+    .categories-wrap { max-width: 920px; margin: 0 auto; }
   </style>
 </head>
 <body>
@@ -24,40 +24,40 @@
 <header class="site-header">
   <div class="container header-inner">
     <a href="index.html" class="btn-back">← Volver</a>
-    <h1 class="brand">📚 Colecciones</h1>
+    <h1 class="brand">📚 Categorías</h1>
   </div>
 </header>
 
-<main class="container collections-wrap">
-  <div id="collectionsList" class="collections-list" aria-live="polite"></div>
+<main class="container categories-wrap">
+  <div id="categoriesList" class="categories-list" aria-live="polite"></div>
 
   <!-- Empty state -->
   <section id="emptyState" style="display:none; text-align:center; margin:2rem 0;">
     <div style="font-size:3rem;">📂</div>
-    <h3 style="margin:.25rem 0 0;">No hay colecciones</h3>
-    <p class="form-msg">Crea tu primera colección con el botón “＋”.</p>
+    <h3 style="margin:.25rem 0 0;">No hay categorías</h3>
+    <p class="form-msg">Crea tu primera categoría con el botón “＋”.</p>
   </section>
 </main>
 
-<button id="openAddCollectionBtn" class="floating-btn" title="Agregar colección">＋</button>
+<button id="openAddCategoryBtn" class="floating-btn" title="Agregar categoría">＋</button>
 
-<dialog id="collectionDialog">
-  <form id="collectionForm" method="dialog">
-    <h2>Nueva colección</h2>
+<dialog id="categoryDialog">
+  <form id="categoryForm" method="dialog">
+    <h2>Nueva categoría</h2>
     <label>📚 Nombre</label>
-    <input type="text" id="colName" required placeholder="Desayunos" />
+    <input type="text" id="catName" required placeholder="Desayunos" />
     <div class="dialog-actions">
-      <button type="button" id="cancelCollectionBtn" class="btn-secondary">Cancelar</button>
-      <button type="submit" id="saveCollectionBtn" class="btn-primary">Guardar</button>
+      <button type="button" id="cancelCategoryBtn" class="btn-secondary">Cancelar</button>
+      <button type="submit" id="saveCategoryBtn" class="btn-primary">Guardar</button>
     </div>
   </form>
 </dialog>
 
-<dialog id="editCollectionDialog">
-  <form id="editCollectionForm" method="dialog">
-    <h2>Editar colección</h2>
+<dialog id="editCategoryDialog">
+  <form id="editCategoryForm" method="dialog">
+    <h2>Editar categoría</h2>
     <label>📛 Nuevo nombre</label>
-    <input type="text" id="editColName" required />
+    <input type="text" id="editCatName" required />
     <div class="dialog-actions">
       <button type="button" id="cancelEditBtn" class="btn-secondary">Cancelar</button>
       <button type="submit" id="saveEditBtn" class="btn-primary">Guardar</button>
@@ -66,7 +66,7 @@
 </dialog>
 
 <dialog id="confirmDialog">
-  <h3>¿Borrar esta colección?</h3>
+  <h3>¿Borrar esta categoría?</h3>
   <p>Esta acción no se puede deshacer.</p>
   <div class="dialog-actions">
     <button type="button" id="cancelDeleteBtn" class="btn-secondary">Cancelar</button>
@@ -74,6 +74,6 @@
   </div>
 </dialog>
 
-<script type="module" src="assets/js/collections.js"></script>
+<script type="module" src="assets/js/categorias.js"></script>
 </body>
 </html>
