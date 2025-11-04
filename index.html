@@ -10,51 +10,74 @@
 
 <header class="site-header">
   <div class="container header-inner">
+    <!-- 📚 icono a la izquierda, como botón -->
+    <a id="collectionsLink" href="collections.html" class="btn-secondary" title="Colecciones" aria-label="Colecciones">📚</a>
+
     <h1 class="brand">🍿 Recetas Puchoclo 🍿</h1>
-    <div class="search-wrap">
-      <input type="text" id="searchInput" class="search-input" placeholder="Buscar receta...">
-    </div>
   </div>
 </header>
 
+<!-- Barra bajo el título: búsqueda y filtro por colección -->
+<section class="container" style="margin-top:.5rem;">
+  <!-- Buscar -->
+  <div class="search-wrap" style="margin-bottom:.5rem;">
+    <input type="text" id="searchInput" class="search-input" placeholder="Buscar receta...">
+  </div>
 
-  <main>
-    <div id="recipesContainer" class="recipes-grid"></div>
-  </main>
+  <!-- Filtro por colección -->
+<div class="filters-bar">
+  <span aria-hidden="true">📚</span>
+  <label for="filterCollection" class="visually-hidden">Filtrar por colección</label>
+  <select id="filterCollection" class="form-select">
+    <option value="">(Todas)</option>
+  </select>
+</div>
+  </div>
+</section>
 
-  <button id="addRecipeBtn" class="floating-btn" title="Añadir receta">＋</button>
+<main>
+  <div id="recipesContainer" class="recipes-grid"></div>
+</main>
 
-  <!-- Modal crear receta -->
-  <dialog id="recipeDialog">
-    <form id="recipeForm" method="dialog">
-      <h2>Nueva receta</h2>
+<button id="addRecipeBtn" class="floating-btn" title="Añadir receta">＋</button>
 
-      <label>📛 Título</label>
-      <input type="text" id="titulo" required placeholder="Budín de limón" />
+<!-- Modal crear receta -->
+<dialog id="recipeDialog">
+  <form id="recipeForm" method="dialog">
+    <h2>Nueva receta</h2>
 
-      <label>⏱️ Tiempo de preparación</label>
-      <input type="time" id="tiempo" value="00:30" step="300" required />
+    <label>📛 Título</label>
+    <input type="text" id="titulo" required placeholder="Budín de limón" />
 
-      <label>🍰 Porciones</label>
-      <input type="number" id="porciones" min="0" value="0" />
+    <!-- Selección de colección -->
+    <label>📚 Colección</label>
+    <select id="collectionSelect">
+      <option value="">(Sin colección)</option>
+    </select>
 
-      <label>🖼️ Enlace de imagen</label>
-      <input type="url" id="imagenUrl" placeholder="https://..." required />
+    <label>⏱️ Tiempo de preparación</label>
+    <input type="time" id="tiempo" value="00:30" step="300" required />
 
-      <label>🧺 Ingredientes</label>
-      <textarea id="ingredientes" rows="5" placeholder="1) Harina 200 g"></textarea>
+    <label>🍰 Porciones</label>
+    <input type="number" id="porciones" min="0" value="0" />
 
-      <label>👩‍🍳 Preparación</label>
-      <textarea id="pasos" rows="6" placeholder="1) Precalentar el horno a 180°C"></textarea>
+    <label>🖼️ Enlace de imagen</label>
+    <input type="url" id="imagenUrl" placeholder="https://..." required />
 
-      <div class="dialog-actions">
-        <button type="button" id="cancelDialogBtn" class="btn-secondary">Cancelar</button>
-        <button type="submit" id="saveRecipeBtn" class="btn-primary">Guardar</button>
-      </div>
-      <p id="formMsg" class="form-msg"></p>
-    </form>
-  </dialog>
-  <script type="module" src="assets/js/app.js"></script>
+    <label>🧺 Ingredientes</label>
+    <textarea id="ingredientes" rows="5" placeholder="1) Harina 200 g"></textarea>
 
+    <label>👩‍🍳 Preparación</label>
+    <textarea id="pasos" rows="6" placeholder="1) Precalentar el horno a 180°C"></textarea>
+
+    <div class="dialog-actions">
+      <button type="button" id="cancelDialogBtn" class="btn-secondary">Cancelar</button>
+      <button type="submit" id="saveRecipeBtn" class="btn-primary">Guardar</button>
+    </div>
+    <p id="formMsg" class="form-msg"></p>
+  </form>
+</dialog>
+
+<script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

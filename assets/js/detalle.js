@@ -1,5 +1,8 @@
 import { db } from "./firebase.js";
-import { doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  doc, getDoc, updateDoc, deleteDoc,
+  getDocs, collection, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ---------- Helpers ---------- */
 const $ = (id) => document.getElementById(id);
@@ -9,7 +12,7 @@ const getParam = (k) => new URL(window.location.href).searchParams.get(k);
 function linesToArr(txt) {
   return (txt || "")
     .split(/\r?\n/)
-    .map(s => s.replace(/^\s*(\d+\)\s*|[-•]\s*)/, "").trim()) // quita "1) " o "• " o "-"
+    .map(s => s.replace(/^\s*(\d+\)\s*|[-•]\s*)/, "").trim())
     .filter(Boolean);
 }
 
@@ -47,13 +50,13 @@ const e_porciones = $("e_porciones");
 const e_imagenUrl = $("e_imagenUrl");
 const e_ingredientes = $("e_ingredientes");
 const e_pasos = $("e_pasos");
+const e_collectionSelect = $("e_collectionSelect"); // 👈 NUEVO
 
 /* ---------- Estado ---------- */
 const id = getParam("id");
 let currentData = null;
 
 /* ---------- Auto-formato en edición ---------- */
-// Ingredientes: añade "• " en cada Enter
 function enableAutoBullets(el) {
   if (!el) return;
   if (!el.value.trim()) el.value = "• ";
@@ -61,25 +64,41 @@ function enableAutoBullets(el) {
     if (e.key === "Enter") {
       e.preventDefault();
       el.value += "\n• ";
-      // mueve cursor al final
       setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
     }
   });
 }
 
-// Pasos: añade "n) " consecutivo en cada Enter
 function enableAutoNumbering(el) {
   if (!el) return;
   if (!el.value.trim()) el.value = "1) ";
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      // contar líneas reales (no vacías)
       const count = el.value.split(/\r?\n/).filter(l => l.trim().length).length;
       el.value += `\n${count + 1}) `;
       setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
     }
   });
+}
+
+/* ---------- Cargar colecciones en el SELECT (editar) ---------- */
+async function loadCollectionsForEditSelect(selectedId = "") {
+  if (!e_collectionSelect) return;
+  e_collectionSelect.innerHTML = `<option value="">(Sin colección)</option>`;
+  try {
+    const snap = await getDocs(query(collection(db, "colecciones"), orderBy("name", "asc")));
+    snap.forEach(d => {
+      const data = d.data();
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = data?.name || "(sin nombre)";
+      if (d.id === selectedId) opt.selected = true;
+      e_collectionSelect.appendChild(opt);
+    });
+  } catch (e) {
+    console.error("Error cargando colecciones (editar):", e);
+  }
 }
 
 /* ---------- Cargar receta ---------- */
@@ -101,7 +120,7 @@ async function loadRecipe() {
 
     const porc = (currentData.porciones ?? currentData.raciones ?? 0);
 
-    // Pintar detalle
+    // Pintar detalle (incluye badge de colección si existe)
     card.innerHTML = `
       <img src="${currentData.imagen || ""}" alt="${currentData.nombre || ""}" />
       <div class="detalle-body">
@@ -109,6 +128,7 @@ async function loadRecipe() {
         <p class="meta">
           <span class="badge">⏱️ ${currentData.tiempo || "—"}</span>
           ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
+          ${currentData.collectionName ? `<span class="badge">📚 ${currentData.collectionName}</span>` : ""}
         </p>
 
         <h3>🧺 Ingredientes</h3>
@@ -124,13 +144,15 @@ async function loadRecipe() {
     `;
 
     // Prellenar modal edición con formato visible:
-    e_titulo.value     = currentData.nombre || "";
-    e_tiempo.value     = /^\d{2}:\d{2}$/.test(currentData.tiempo || "") ? currentData.tiempo : "00:30";
-    e_porciones.value  = porc; // 0 si no existe
-    e_imagenUrl.value  = currentData.imagen || "";
-    e_ingredientes.value = toBulletedLines(currentData.ingredientes); // • item
-    e_pasos.value        = toNumberedLines(currentData.pasos);        // 1) item
+    e_titulo.value       = currentData.nombre || "";
+    e_tiempo.value       = /^\d{2}:\d{2}$/.test(currentData.tiempo || "") ? currentData.tiempo : "00:30";
+    e_porciones.value    = porc;
+    e_imagenUrl.value    = currentData.imagen || "";
+    e_ingredientes.value = toBulletedLines(currentData.ingredientes);
+    e_pasos.value        = toNumberedLines(currentData.pasos);
 
+    // Cargar colecciones y preseleccionar la actual
+    await loadCollectionsForEditSelect(currentData.collectionId || "");
   } catch (err) {
     console.error(err);
     msg.textContent = "⚠️ Error al cargar la receta.";
@@ -150,11 +172,11 @@ function setupDialogs() {
   ensureDialogPolyfill(editDialog);
   ensureDialogPolyfill(confirmDialog);
 
-  editBtn.addEventListener("click", () => {
-    // Asegurar auto-formato activo cada vez que abres
+  editBtn.addEventListener("click", async () => {
+    // cada vez que abras, recarga colecciones (por si se agregaron nuevas)
+    await loadCollectionsForEditSelect(currentData?.collectionId || "");
     enableAutoBullets(e_ingredientes);
     enableAutoNumbering(e_pasos);
-    // Si por alguna razón vienen vacíos, semilla:
     if (!e_ingredientes.value.trim()) e_ingredientes.value = "• ";
     if (!e_pasos.value.trim()) e_pasos.value = "1) ";
     editDialog.showModal();
@@ -176,21 +198,29 @@ editForm.addEventListener("submit", async (e) => {
 
   const porcVal = Math.max(0, parseInt(e_porciones.value, 10) || 0);
 
+  // colección elegida
+  const colId = e_collectionSelect?.value || "";
+  const colName = (e_collectionSelect && e_collectionSelect.selectedOptions && e_collectionSelect.selectedOptions[0])
+    ? e_collectionSelect.selectedOptions[0].textContent
+    : "";
+
   const updated = {
     nombre: e_titulo.value.trim(),
     tiempo: normalizeTime(e_tiempo.value.trim()),
-    porciones: porcVal, // ← guarda porciones (0 permitido)
+    porciones: porcVal,
     imagen: e_imagenUrl.value.trim(),
-    // Se limpia la numeración/viñetas para guardar como arrays “puros”
     ingredientes: linesToArr(e_ingredientes.value),
     pasos: linesToArr(e_pasos.value),
+    // 👇 NUEVO: actualizar colección
+    collectionId: colId || null,
+    collectionName: colId ? colName : null,
   };
 
   try {
     await updateDoc(doc(db, "recetas", id), updated);
     msg.textContent = "Cambios guardados ✔";
     editDialog.close();
-    await loadRecipe();
+    await loadRecipe(); // refresca la tarjeta con la nueva badge de colección
   } catch (err) {
     console.error(err);
     msg.textContent = "⚠️ Error al actualizar.";

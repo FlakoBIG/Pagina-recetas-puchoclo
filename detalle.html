@@ -29,6 +29,7 @@
   </main>
 
   <!-- ✏️ Modal editar -->
+
   <dialog id="editDialog">
     <form id="editForm" method="dialog">
       <h2>Editar receta</h2>
@@ -36,12 +37,17 @@
       <label>Título</label>
       <input type="text" id="e_titulo" required/>
 
+      <!-- 👇 NUEVO: selector de colección -->
+      <label>📚 Colección</label>
+      <select id="e_collectionSelect">
+        <option value="">(Sin colección)</option>
+      </select>
+
       <label>Tiempo</label>
       <input type="time" id="e_tiempo" value="00:30" step="300" required/>
 
       <label>🍰 Porciones</label>
       <input type="number" id="e_porciones" min="0" value="0" required/>
-
 
       <label>Enlace de imagen</label>
       <input type="url" id="e_imagenUrl" placeholder="https://..." required/>
@@ -58,6 +64,7 @@
       </div>
     </form>
   </dialog>
+
 
   <!-- 🗑️ Modal confirmar borrado -->
   <dialog id="confirmDialog">
