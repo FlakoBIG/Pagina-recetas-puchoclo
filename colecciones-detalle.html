@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍿 Colección | Puchoclo</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="colecciones.html" class="btn-back">← Colecciones</a>
+    <h1 id="tituloColeccion" class="brand">Colección</h1>
+  </div>
+</header>
+
+<main class="container" style="max-width: 1000px;">
+  <p id="detalleMsg" class="form-msg"></p>
+
+  <!-- grilla de recetas asignadas -->
+  <section id="gridRecetas" class="recipes-grid"></section>
+
+  <!-- Empty state (oculto por defecto) -->
+  <section id="emptyState" style="display:none; text-align:center; margin:2rem 0;">
+    <div style="font-size:3rem;">📂</div>
+    <h3 style="margin:.25rem 0 0;">No hay recetas en esta colección</h3>
+    <p class="form-msg">Usa el botón “🍎” para seleccionar recetas.</p>
+  </section>
+</main>
+
+<!-- Botón flotante para asignar recetas -->
+<button id="assignBtn" class="floating-btn" title="Seleccionar recetas para esta colección" aria-label="Seleccionar recetas">🍎</button>
+
+<!-- Modal: seleccionar recetas -->
+<dialog id="dlgAsignar" class="modal">
+  <form method="dialog" id="formAsignar" class="modal-box">
+    <h3 id="dlgTitulo">Seleccionar recetas para la colección</h3>
+
+    <div class="modal-body" style="max-height: 60vh; overflow:auto;">
+      <!-- mismo estilo que el index -->
+      <input type="search" id="buscarReceta" class="search-input" placeholder="Buscar receta..." />
+      <ul id="listaRecetasCheckbox" class="list"></ul>
+    </div>
+
+    <div class="modal-actions">
+      <button type="submit" class="btn-primary">Guardar</button>
+      <button type="button" id="btnCerrarDlg" class="btn-secondary">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="assets/js/colecciones-detalle.js"></script>
+</body>
+</html>

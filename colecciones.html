@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍿 Colecciones | Puchoclo</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="btn-back">← Inicio</a>
+    <h1 class="brand">🍿 Colecciones</h1>
+  </div>
+</header>
+
+<main class="container" style="max-width: 960px;">
+  <p id="msgColecciones" class="form-msg"></p>
+
+  <section class="card p-3 mt-2">
+    <ul id="coleccionesLista" class="list"></ul>
+  </section>
+</main>
+
+<!-- Botón flotante circular como en el index -->
+<button id="addCollectionBtn" class="floating-btn" title="Añadir colección" aria-label="Añadir colección">＋</button>
+
+<!-- Modal crear/editar colección -->
+<dialog id="dlgCol" class="modal">
+  <form method="dialog" id="formCol" class="modal-box">
+    <h3 id="dlgTitulo">Nueva colección</h3>
+
+    <div class="modal-body">
+      <label class="field">
+        <span>Nombre</span>
+        <input id="colNombre" type="text" required maxlength="80" placeholder="Ej: Postres favoritos" />
+      </label>
+
+      <label class="field">
+        <span>Descripción</span>
+        <input id="colDesc" type="text" maxlength="140" placeholder="Opcional" />
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button type="submit" class="btn-primary" id="btnGuardar">Guardar</button>
+      <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Modal confirmar eliminación -->
+<dialog id="dlgDel" class="modal">
+  <form method="dialog" id="formDel" class="modal-box">
+    <h3>Eliminar colección</h3>
+    <div class="modal-body">
+      <p>¿Seguro que deseas eliminar la colección <strong id="delName">—</strong>?</p>
+      <p class="muted">Esta acción no elimina las recetas, solo la colección.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="btnCancelDel">Cancelar</button>
+      <button type="submit" class="btn-danger" id="btnConfirmDel">Eliminar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="assets/js/colecciones.js"></script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+import { db } from "./firebase.js";
+import {
+  doc, getDoc, updateDoc, deleteDoc,
+  getDocs, collection, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ---------- Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const getParam = (k) => new URL(window.location.href).searchParams.get(k);
+
+// Quita numeración/bullets al convertir a array (para guardar limpio)
+function linesToArr(txt) {
+  return (txt || "")
+    .split(/\r?\n/)
+    .map(s => s.replace(/^\s*(\d+\)\s*|[-•]\s*)/, "").trim())
+    .filter(Boolean);
+}
+
+// Convierte array/texto a líneas con VIÑETA "• "
+function toBulletedLines(src) {
+  const lines = Array.isArray(src) ? src : (src || "").split(/\r?\n/).filter(Boolean);
+  if (!lines.length) return "• ";
+  return lines.map(s => `• ${s}`).join("\n");
+}
+
+// Convierte array/texto a líneas NUMERADAS "1) "
+function toNumberedLines(src) {
+  const lines = Array.isArray(src) ? src : (src || "").split(/\r?\n/).filter(Boolean);
+  if (!lines.length) return "1) ";
+  return lines.map((s, i) => `${i + 1}) ${s}`).join("\n");
+}
+
+/* ---------- DOM ---------- */
+const backLink = $("backLink");
+const msg = $("detalleMsg");
+const card = $("detalleCard");
+const editBtn = $("editBtn");
+const deleteBtn = $("deleteBtn");
+
+const editDialog = $("editDialog");
+const editForm = $("editForm");
+const cancelEditBtn = $("cancelEditBtn");
+
+const confirmDialog = $("confirmDialog");
+const cancelDeleteBtn = $("cancelDeleteBtn");
+const confirmDeleteBtn = $("confirmDeleteBtn");
+
+const e_titulo = $("e_titulo");
+const e_tiempo = $("e_tiempo");
+const e_porciones = $("e_porciones");
+const e_imagenUrl = $("e_imagenUrl");
+const e_ingredientes = $("e_ingredientes");
+const e_pasos = $("e_pasos");
+const e_categorySelect = $("e_categorySelect"); // selector de Categoría
+
+/* ---------- Estado ---------- */
+const id = getParam("id");        // id de receta
+const col = getParam("col");      // id de colección (para volver)
+let currentData = null;
+
+/* ---------- Auto-formato en edición ---------- */
+function enableAutoBullets(el) {
+  if (!el) return;
+  if (!el.value.trim()) el.value = "• ";
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      el.value += "\n• ";
+      setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
+    }
+  });
+}
+
+function enableAutoNumbering(el) {
+  if (!el) return;
+  if (!el.value.trim()) el.value = "1) ";
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const count = el.value.split(/\r?\n/).filter(l => l.trim().length).length;
+      el.value += `\n${count + 1}) `;
+      setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
+    }
+  });
+}
+
+/* ---------- Cargar categorías en el SELECT (editar) ---------- */
+async function loadCategoriesForEditSelect(selectedName = "") {
+  if (!e_categorySelect) return;
+  e_categorySelect.innerHTML = `<option value="">(Sin categoría)</option>`;
+  try {
+    const snap = await getDocs(query(collection(db, "categorias"), orderBy("name", "asc")));
+    snap.forEach(d => {
+      const data = d.data();
+      const name = (data?.name || "").trim();
+      if (!name) return;
+      const opt = document.createElement("option");
+      opt.value = name;        // guardamos por NOMBRE en 'categoria'
+      opt.textContent = name;
+      if (name === selectedName) opt.selected = true;
+      e_categorySelect.appendChild(opt);
+    });
+  } catch (e) {
+    console.error("Error cargando categorías (editar):", e);
+  }
+}
+
+/* ---------- Setear enlace Volver ---------- */
+async function setBackLink() {
+  if (!col) {
+    backLink.href = "colecciones.html";
+    backLink.textContent = "← Colecciones";
+    return;
+  }
+  try {
+    const cSnap = await getDoc(doc(db, "colecciones", col));
+    if (cSnap.exists()) {
+      const nombre = cSnap.data()?.nombre || "Colección";
+      backLink.href = `colecciones-detalle.html?id=${col}`;
+      backLink.textContent = `← ${nombre}`;
+    } else {
+      backLink.href = `colecciones-detalle.html?id=${col}`;
+      backLink.textContent = "← Colección";
+    }
+  } catch {
+    backLink.href = `colecciones-detalle.html?id=${col}`;
+    backLink.textContent = "← Colección";
+  }
+}
+
+/* ---------- Cargar receta ---------- */
+async function loadRecipe() {
+  if (!id) {
+    if (msg) msg.textContent = "❌ Falta el id en la URL.";
+    return;
+  }
+  await setBackLink();
+
+  try {
+    if (msg) msg.textContent = "⏳ Cargando…";
+    const ref = doc(db, "recetas", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      if (msg) msg.textContent = "❌ La receta no existe o fue eliminada.";
+      return;
+    }
+    currentData = snap.data();
+    if (msg) msg.textContent = "";
+
+    const porc = (currentData.porciones ?? currentData.raciones ?? 0);
+    const categoryName = (currentData.categoria || currentData.collectionName || "").trim();
+
+    // Pintar detalle
+    card.innerHTML = `
+      <img src="${currentData.imagen || ""}" alt="${currentData.nombre || ""}" />
+      <div class="detalle-body">
+        <h2>${currentData.nombre || "Sin título"}</h2>
+        <p class="meta">
+          <span class="badge">⏱️ ${currentData.tiempo || "—"}</span>
+          ${porc > 0 ? `<span class="badge">🍰 ${porc} porciones</span>` : ""}
+          ${categoryName ? `<span class="badge">📚 ${categoryName}</span>` : ""}
+        </p>
+
+        <h3>🧺 Ingredientes</h3>
+        <ul class="listita">
+          ${(currentData.ingredientes || []).map(x => `<li>${x}</li>`).join("") || "<li>—</li>"}
+        </ul>
+
+        <h3>👩‍🍳 Preparación</h3>
+        <ol class="listita">
+          ${(currentData.pasos || []).map(x => `<li>${x}</li>`).join("") || "<li>—</li>"}
+        </ol>
+      </div>
+    `;
+
+    // Prellenar modal edición con formato visible:
+    e_titulo.value       = currentData.nombre || "";
+    e_tiempo.value       = /^\d{2}:\d{2}$/.test(currentData.tiempo || "") ? currentData.tiempo : "00:30";
+    e_porciones.value    = porc;
+    e_imagenUrl.value    = currentData.imagen || "";
+    e_ingredientes.value = toBulletedLines(currentData.ingredientes);
+    e_pasos.value        = toNumberedLines(currentData.pasos);
+
+    // Cargar categorías y preseleccionar la actual (por NOMBRE)
+    await loadCategoriesForEditSelect(categoryName);
+  } catch (err) {
+    console.error(err);
+    if (msg) msg.textContent = "⚠️ Error al cargar la receta.";
+  }
+}
+
+/* ---------- Abrir/Cerrar modales ---------- */
+function ensureDialogPolyfill(dlg) {
+  if (!dlg) return;
+  if (typeof dlg.showModal !== "function") {
+    dlg.showModal = () => dlg.classList.remove("hidden");
+    dlg.close = () => dlg.classList.add("hidden");
+    dlg.classList.add("hidden");
+  }
+}
+function setupDialogs() {
+  ensureDialogPolyfill(editDialog);
+  ensureDialogPolyfill(confirmDialog);
+
+  editBtn?.addEventListener("click", async () => {
+    const categoryName = (currentData?.categoria || currentData?.collectionName || "").trim();
+    await loadCategoriesForEditSelect(categoryName); // refresca cada vez
+    enableAutoBullets(e_ingredientes);
+    enableAutoNumbering(e_pasos);
+    if (!e_ingredientes.value.trim()) e_ingredientes.value = "• ";
+    if (!e_pasos.value.trim()) e_pasos.value = "1) ";
+    editDialog.showModal();
+  });
+  cancelEditBtn?.addEventListener("click", () => editDialog.close());
+
+  deleteBtn?.addEventListener("click", () => confirmDialog.showModal());
+  cancelDeleteBtn?.addEventListener("click", () => confirmDialog.close());
+}
+
+/* ---------- Guardar edición ---------- */
+function normalizeTime(value) {
+  return /^\d{2}:\d{2}$/.test(value) ? value : "00:30";
+}
+
+editForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (msg) msg.textContent = "Guardando cambios…";
+
+  const porcVal = Math.max(0, parseInt(e_porciones.value, 10) || 0);
+  const categoriaName = (e_categorySelect?.value || "").trim(); // por nombre
+
+  const updated = {
+    nombre: e_titulo.value.trim(),
+    tiempo: normalizeTime(e_tiempo.value.trim()),
+    porciones: porcVal,
+    imagen: e_imagenUrl.value.trim(),
+    ingredientes: linesToArr(e_ingredientes.value),
+    pasos: linesToArr(e_pasos.value),
+    categoria: categoriaName || null,
+    // limpieza compat opcional:
+    collectionId: null,
+    collectionName: null
+  };
+
+  try {
+    await updateDoc(doc(db, "recetas", id), updated);
+    if (msg) msg.textContent = "Cambios guardados ✔";
+    editDialog.close();
+    await loadRecipe(); // refresca la tarjeta
+  } catch (err) {
+    console.error(err);
+    if (msg) msg.textContent = "⚠️ Error al actualizar.";
+  }
+});
+
+/* ---------- Confirmar borrado ---------- */
+confirmDeleteBtn?.addEventListener("click", async () => {
+  try {
+    await deleteDoc(doc(db, "recetas", id));
+    confirmDialog.close();
+    // volver a la colección si existe ese contexto
+    if (col) {
+      window.location.href = `colecciones-detalle.html?id=${col}`;
+    } else {
+      window.location.href = "index.html";
+    }
+  } catch (err) {
+    console.error(err);
+    if (msg) msg.textContent = "⚠️ Error al borrar.";
+    confirmDialog.close();
+  }
+});
+
+/* ---------- Init ---------- */
+window.addEventListener("DOMContentLoaded", () => {
+  setupDialogs();
+  loadRecipe();
+});

@@ -185,3 +185,172 @@ dialog select {
   box-shadow:0 0 0 3px color-mix(in oklab, var(--primary, #f0c76a) 25%, transparent);
 }
 select::-ms-expand{ display:none; } /* Edge antiguo */
+
+/* ===== Colecciones (tarjeta estilo categoría) ===== */
+#coleccionesLista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.collection-empty {
+  color: var(--muted, #bbb);
+  padding: 14px 18px;
+}
+
+.collection-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  margin: 10px 0;
+  background: color-mix(in oklab, #000 70%, #fff 5%);
+  border-radius: 14px;
+}
+
+.collection-main {
+  display: block;
+  flex: 1;
+  text-decoration: none;
+  padding: 12px 14px;
+  border-radius: 10px;
+  transition: transform .05s ease, background-color .15s ease;
+}
+
+.collection-main:focus,
+.collection-item:hover .collection-main {
+  background: color-mix(in oklab, var(--primary, #f0c76a) 12%, transparent);
+}
+
+.collection-title {
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+  color: #e8e8e8;
+}
+
+.collection-desc {
+  margin: 0;
+  color: var(--muted, #b9b9b9);
+  font-size: .92rem;
+}
+
+/* Acciones a la derecha */
+.collection-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-sm { padding: 10px 14px; border-radius: 10px; font-weight: 600; }
+.btn-warning { background: #f7d372; color: #3b2b00; border: none; }
+.btn-warning:hover { filter: brightness(0.95); }
+.btn-danger { background: #c44941; color: #fff; border: none; }
+.btn-danger:hover { filter: brightness(0.95); }
+
+#dlgDel .btn-danger { background: #c44941; color: #fff; border: none; }
+#dlgDel .btn { background: #2e2e2e; color: #eee; border: none; }
+#dlgDel .muted { color: var(--muted, #b9b9b9); }
+
+/* ===== Selector de recetas (modal) ===== */
+#dlgAsignar .modal-box {
+  max-width: 720px;
+}
+
+#listaRecetasCheckbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* Tarjeta seleccionable */
+.select-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* checkbox – content – meta opcional */
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: color-mix(in oklab, #fff 6%, #000 82%);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+              0 0 0 1px rgba(255,255,255,0.04),
+              0 6px 18px rgba(0,0,0,0.25);
+  transition: background-color .15s ease, transform .05s ease;
+}
+
+.select-item:hover {
+  background: color-mix(in oklab, var(--primary, #f0c76a) 10%, transparent);
+}
+.select-item:active { transform: scale(0.998); }
+
+/* Checkbox custom (simple y accesible) */
+.select-check {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary, #f0c76a);
+  transform: translateY(1px);
+}
+
+/* Thumbnail */
+.select-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #1b1b1b;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25) inset;
+}
+
+/* Contenido */
+.select-content {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.select-title {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: #eee;
+}
+
+.select-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.select-badge {
+  display: inline-block;
+  font-size: .8rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #2b2b2b;
+  color: #cfcfcf;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Estado seleccionado: borde y fondo sutil */
+.select-item.is-checked {
+  outline: 2px solid color-mix(in oklab, var(--primary, #f0c76a) 60%, #000 0%);
+  background: color-mix(in oklab, var(--primary, #f0c76a) 16%, transparent);
+}
+
+/* Responsive: en pantallas chicas mantiene una columna, en mayores se ve bien */
+@media (min-width: 640px) {
+  #listaRecetasCheckbox {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Barra de búsqueda del modal igual al index */
+#dlgAsignar .search-input {
+  width: 100%;
+  margin: 0 0 .75rem 0;
+}
+#dlgAsignar .search-input {
+  width: 100%;
+  margin-bottom: .75rem;
+}

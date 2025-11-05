@@ -10,7 +10,8 @@
 
 <header class="site-header">
   <div class="container header-inner">
-    <a href="index.html" class="btn-back">← Inicio</a>
+    <!-- El href se setea por JS con el parámetro ?col= -->
+    <a id="backLink" href="colecciones.html" class="btn-back">← Colecciones</a>
     <h1 class="brand">🍿 Recetas Puchoclo 🍿</h1>
   </div>
 </header>
@@ -34,7 +35,7 @@
     <label>📛 Título</label>
     <input type="text" id="e_titulo" required/>
 
-    <!-- 👇 Ahora: selector de CATEGORÍA -->
+    <!-- Selector de CATEGORÍA por NOMBRE -->
     <label>📚 Categoría</label>
     <select id="e_categorySelect">
       <option value="">(Sin categoría)</option>
@@ -72,6 +73,6 @@
   </div>
 </dialog>
 
-<script type="module" src="assets/js/detalle.js"></script>
+<script type="module" src="assets/js/receta-detalle-coleccion.js"></script>
 </body>
 </html>
